@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.10
 
 # 设置时区为亚洲/上海
 ENV TZ=Asia/Shanghai

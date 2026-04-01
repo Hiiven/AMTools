@@ -1,4 +1,4 @@
 flask
 flask-cors
 requests
-gamdl>=2.9.2
+gamdl>=2.8.7
