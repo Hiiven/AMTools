@@ -1,15 +1,3 @@
-
----
-title: AMTools
-emoji: 💻
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-pinned: false
----
-
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
-
 # 🎵 AMTools - 高质量音乐下载与转换工具
 
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
