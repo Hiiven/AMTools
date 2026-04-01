@@ -5,8 +5,9 @@
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
 [![Deployment](https://img.shields.io/badge/Deployed%20on-Hugging%20Face-ffcc00)](https://huggingface.co/spaces/e1290546670/AMTools)
 
-**AMTools** 是一个基于 Python Flask 构建的在线音乐处理工具。它集成了 `gamdl` 下载引擎与 `FFmpeg` 核心，支持高解析度音乐的提取、格式转换（如 M4A 转 MP3）以及元数据保留。
+**AMTools** 是一个专为音乐爱好者打造的在线工具，核心功能是 **将 Apple Music 链接直接转换为 MP3/M4A 音频文件**。
 
+它不仅能帮你下载高解析度的音源，还能通过内置的 FFmpeg 自动完成格式转换，并完美保留专辑封面、艺术家、歌词等所有元数据。
 ---
 
 ## 🚀 在线体验
