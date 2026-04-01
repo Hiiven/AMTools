@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 import subprocess
 import time
@@ -199,8 +200,23 @@ def run_job(sid, links, skip_existing):
         )
         for line in proc.stdout:
             line = line.decode('utf-8', errors='replace').strip()
-            if line:
-                log(f"  {line}")
+            if not line:
+                continue
+            clean = re.sub(r'\x1b\[[0-9;]*m', '', line)
+            m = re.search(r'\[Track (\d+)/(\d+)\]\s+(Downloading|Skipping)\s+"([^"]+)"', clean)
+            if m:
+                cur, total, action, name = m.group(1), m.group(2), m.group(3), m.group(4)
+                if action == "Skipping":
+                    log(f"  [跳过] {name} ({cur}/{total})")
+                else:
+                    log(f"  [下载] {name} ({cur}/{total})")
+                prog(10 + int(int(cur) / int(total) * 20), f"正在下载 ({cur}/{total})")
+            elif "Starting Gamdl" in clean:
+                log(f"  [启动] gamdl {clean.split()[-1]}")
+            elif "Media file already exists" in clean:
+                pass
+            elif "WARNING" in clean or "ERROR" in clean:
+                log(f"  {clean}")
         proc.wait(timeout=3600)
         if proc.returncode != 0:
             log(f"[警告] gamdl 退出码: {proc.returncode}")
