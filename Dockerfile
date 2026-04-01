@@ -1,5 +1,9 @@
 FROM python:3.9
 
+# 设置时区为亚洲/上海
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 # 安装 ffmpeg 和其他系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
