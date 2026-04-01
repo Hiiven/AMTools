@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMTools - Apple Music 转 MP3</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif; background: #0f0f0f; color: #e0e0e0; min-height: 100vh; }
+        .container { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+        h1 { text-align: center; font-size: 28px; margin-bottom: 4px; background: linear-gradient(135deg, #fa2d48, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { text-align: center; color: #888; font-size: 14px; margin-bottom: 28px; }
+        .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .card-title { font-size: 14px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+        .row { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+        .row:last-child { margin-bottom: 0; }
+        .row label { font-size: 14px; color: #aaa; white-space: nowrap; min-width: 80px; }
+        .row input[type="text"] { flex: 1; background: #111; border: 1px solid #333; border-radius: 8px; color: #e0e0e0; font-size: 13px; padding: 10px 12px; outline: none; }
+        .row input[type="text"]:focus { border-color: #fa2d48; }
+        .btn-sm { background: #333; color: #e0e0e0; border: none; border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+        .btn-sm:hover { background: #444; }
+        .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+        .toggle { position: relative; width: 44px; height: 24px; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle .slider { position: absolute; inset: 0; background: #333; border-radius: 24px; cursor: pointer; transition: 0.3s; }
+        .toggle .slider::before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #888; border-radius: 50%; transition: 0.3s; }
+        .toggle input:checked + .slider { background: #fa2d48; }
+        .toggle input:checked + .slider::before { transform: translateX(20px); background: #fff; }
+        .toggle-label { font-size: 14px; color: #ccc; }
+
+        .cookie-area { display: flex; align-items: center; gap: 12px; }
+        .cookie-status { font-size: 13px; color: #888; }
+        .cookie-status.ok { color: #4ade80; }
+        .cookie-status.none { color: #f87171; }
+
+        .row-cards {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .row-cards .card {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .link-input-row { display: flex; gap: 8px; margin-bottom: 12px; }
+        .link-input-row input { flex: 1; background: #111; border: 1px solid #333; border-radius: 8px; color: #e0e0e0; font-family: "Consolas", monospace; font-size: 13px; padding: 10px 12px; outline: none; }
+        .link-input-row input:focus { border-color: #fa2d48; }
+        .link-input-row .btn-add { background: #fa2d48; color: #fff; border: none; border-radius: 8px; padding: 10px 18px; cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; }
+        .link-input-row .btn-add:hover { background: #d4203a; }
+        .link-list { max-height: 180px; overflow-y: auto; }
+        .link-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #111; border-radius: 6px; margin-bottom: 4px; font-size: 12px; }
+        .link-num { color: #fa2d48; font-weight: 700; min-width: 28px; text-align: center; }
+        .link-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; font-family: "Consolas", monospace; color: #aaa; }
+        .link-item .btn-del { background: none; border: none; color: #f87171; cursor: pointer; font-size: 16px; padding: 0 4px; flex-shrink: 0; }
+        .link-item .btn-del:hover { color: #ff4444; }
+        .link-empty { text-align: center; color: #555; font-size: 13px; padding: 16px; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-start { background: linear-gradient(135deg, #fa2d48, #d4203a); color: #fff; }
+        .btn-start:hover { opacity: 0.9; }
+        .btn-start:disabled { background: #333; color: #666; cursor: not-allowed; }
+        .btn-stop { background: #333; color: #e0e0e0; flex: 0.5; }
+        .btn-stop:hover { background: #444; }
+        .btn-download { background: #16a34a; color: #fff; flex: 0.5; }
+        .btn-download:hover { background: #15803d; }
+
+        .progress-wrap { margin-top: 16px; }
+        .progress-bar { width: 100%; height: 8px; background: #222; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #fa2d48, #ff6b6b); border-radius: 4px; transition: width 0.5s ease; width: 0%; }
+        .progress-text { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: #888; }
+        .result-box { display: none; margin-top: 12px; padding: 14px; border-radius: 8px; font-size: 14px; line-height: 1.8; }
+        .result-box.success { display: block; background: #0a2a0a; border: 1px solid #1a4a1a; color: #4ade80; }
+        .result-box.error { display: block; background: #2a0a0a; border: 1px solid #4a1a1a; color: #f87171; }
+        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+        .status-dot.idle { background: #666; }
+        .status-dot.running { background: #4ade80; animation: pulse 1s infinite; }
+        .status-dot.done { background: #4ade80; }
+        .status-dot.error { background: #f87171; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .log-box { background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 12px; height: 220px; overflow-y: auto; font-family: "Consolas", monospace; font-size: 12px; line-height: 1.6; color: #aaa; white-space: pre-wrap; word-break: break-all; }
+        .log-box::-webkit-scrollbar { width: 6px; }
+        .log-box::-webkit-scrollbar-track { background: transparent; }
+        .log-box::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+        .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; font-size: 14px; color: #fff; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .toast.show { opacity: 1; }
+        .toast.success { background: #16a34a; }
+        .toast.error { background: #dc2626; }
+
+        #cookieFile { display: none; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px; max-width: 520px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal h3 { font-size: 18px; margin-bottom: 16px; color: #e0e0e0; }
+        .modal p { font-size: 14px; color: #aaa; line-height: 1.6; margin-bottom: 12px; }
+        .modal ol { margin-left: 20px; color: #aaa; font-size: 14px; line-height: 1.8; }
+        .modal ol li { margin-bottom: 8px; }
+        .modal a { color: #fa2d48; text-decoration: none; }
+        .modal a:hover { text-decoration: underline; }
+        .modal-close { background: #fa2d48; color: #fff; border: none; border-radius: 8px; padding: 10px 24px; cursor: pointer; font-size: 14px; margin-top: 16px; float: right; }
+        .modal-close:hover { background: #d4203a; }
+        .tutorial-btn { background: none; border: none; color: #fa2d48; cursor: pointer; font-size: 13px; padding: 0; margin-left: 8px; text-decoration: underline; }
+        .tutorial-btn:hover { color: #ff6b6b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AMTools</h1>
+        <p class="subtitle">Apple Music 转 MP3 一键转换工具</p>
+
+        <div class="row-cards">
+            <div class="card">
+                <div class="card-title">授权 Cookies</div>
+                <div class="cookie-area">
+                    <button class="btn-sm" onclick="document.getElementById('cookieFile').click()">上传 cookies.txt</button>
+                    <input type="file" id="cookieFile" accept=".txt" onchange="uploadCookies(this)">
+                    <span class="cookie-status none" id="cookieStatus">未上传</span>
+                    <button class="tutorial-btn" onclick="showTutorial()">如何获取？</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">设置</div>
+                <div class="toggle-wrap">
+                    <label class="toggle">
+                        <input type="checkbox" id="skipExisting" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">跳过已下载的歌曲</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">歌单链接</div>
+            <div class="link-input-row">
+                <input type="text" id="linkInput" placeholder="粘贴 Apple Music 链接后点击添加..." onkeydown="if(event.key==='Enter')addLink()">
+                <button class="btn-add" onclick="addLink()">添加</button>
+            </div>
+            <div class="link-list" id="linkList">
+                <div class="link-empty">暂无链接，请在上方添加</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="btn-group">
+                <button class="btn btn-start" id="startBtn" onclick="startTask()">开始转换</button>
+                <button class="btn btn-stop" id="stopBtn" onclick="stopTask()" style="display:none;">停止</button>
+                <button class="btn btn-download" id="downloadBtn" onclick="downloadZip()" style="display:none;">下载 MP3</button>
+            </div>
+            <div class="progress-wrap">
+                <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                <div class="progress-text">
+                    <span id="statusText"><span class="status-dot idle"></span>就绪</span>
+                    <span id="progressPct">0%</span>
+                </div>
+            </div>
+            <div class="result-box" id="resultBox"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">运行日志</div>
+            <div class="log-box" id="logBox"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="modal-overlay" id="tutorialModal" onclick="if(event.target===this)closeTutorial()">
+        <div class="modal">
+            <h3>如何导出 Apple Music Cookies</h3>
+            <p>你需要从浏览器中导出 cookies 文件，以便程序可以访问你的 Apple Music 订阅。请确保你已在浏览器中登录 Apple Music 并具有有效的订阅。</p>
+            <ol>
+                <li><strong>Firefox 浏览器：</strong>
+                    <br>安装扩展 <a href="https://addons.mozilla.org/addon/export-cookies-txt" target="_blank">Export Cookies</a>
+                    <br>访问 <a href="https://music.apple.com" target="_blank">music.apple.com</a>，点击扩展图标导出 cookies.txt
+                </li>
+                <li><strong>Chrome / Edge 等 Chromium 浏览器：</strong>
+                    <br>安装扩展 <a href="https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc" target="_blank">Get cookies.txt LOCALLY</a>
+                    <br>访问 <a href="https://music.apple.com" target="_blank">music.apple.com</a>，点击扩展图标导出 cookies.txt
+                </li>
+            </ol>
+            <p>导出后将 cookies.txt 文件上传到此处即可。</p>
+            <button class="modal-close" onclick="closeTutorial()">我知道了</button>
+        </div>
+    </div>
+
+    <script>
+        let links = [];
+        let pollTimer = null;
+        let lastLogCount = 0;
+
+        (async () => {
+            await fetch("/api/reset", { method: "POST" });
+            const r = await fetch("/api/status");
+            const s = await r.json();
+            if (s.logs && s.logs.length) {
+                document.getElementById("logBox").textContent = s.logs.join("\n");
+                lastLogCount = s.logs.length;
+            }
+            if (s.running) {
+                startPolling();
+            }
+        })();
+
+        async function uploadCookies(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const fd = new FormData();
+            fd.append("file", file);
+            const r = await fetch("/api/cookies", { method: "POST", body: fd });
+            const d = await r.json();
+            if (d.ok) {
+                document.getElementById("cookieStatus").textContent = "已上传";
+                document.getElementById("cookieStatus").className = "cookie-status ok";
+                showToast(d.msg, "success");
+            } else {
+                showToast(d.msg, "error");
+            }
+            input.value = "";
+        }
+
+        function addLink() {
+            const input = document.getElementById("linkInput");
+            const link = input.value.trim();
+            if (!link) return;
+            if (links.includes(link)) {
+                showToast("该链接已存在，请勿重复添加", "error");
+                return;
+            }
+            links.push(link);
+            input.value = "";
+            renderLinks();
+        }
+
+        function removeLink(idx) {
+            links.splice(idx, 1);
+            renderLinks();
+        }
+
+        function renderLinks() {
+            const list = document.getElementById("linkList");
+            if (!links.length) {
+                list.innerHTML = '<div class="link-empty">暂无链接，请在上方添加</div>';
+                return;
+            }
+            list.innerHTML = links.map((l, i) =>
+                `<div class="link-item">
+                    <span class="link-num">${i + 1}</span>
+                    <span class="link-text" title="${l}">${l}</span>
+                    <button class="btn-del" onclick="removeLink(${i})">&times;</button>
+                </div>`
+            ).join("");
+            list.scrollTop = list.scrollHeight;
+        }
+
+        async function startTask() {
+            if (!links.length) { showToast("请添加至少一个歌单链接", "error"); return; }
+            const skipExisting = document.getElementById("skipExisting").checked;
+
+            document.getElementById("startBtn").disabled = true;
+            document.getElementById("startBtn").style.display = "none";
+            document.getElementById("stopBtn").style.display = "block";
+            document.getElementById("resultBox").className = "result-box";
+            document.getElementById("resultBox").textContent = "";
+            document.getElementById("logBox").textContent = "";
+            lastLogCount = 0;
+
+            const r = await fetch("/api/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ links, skip_existing: skipExisting }),
+            });
+            const d = await r.json();
+            if (!d.ok) {
+                showToast(d.msg, "error");
+                document.getElementById("startBtn").disabled = false;
+                document.getElementById("startBtn").style.display = "block";
+                document.getElementById("stopBtn").style.display = "none";
+                return;
+            }
+            startPolling();
+        }
+
+        async function stopTask() {
+            await fetch("/api/stop", { method: "POST" });
+            stopPolling();
+            document.getElementById("startBtn").disabled = false;
+            document.getElementById("startBtn").style.display = "block";
+            document.getElementById("stopBtn").style.display = "none";
+        }
+
+        function startPolling() {
+            if (pollTimer) return;
+            pollTimer = setInterval(pollStatus, 1000);
+        }
+
+        function stopPolling() {
+            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        }
+
+        async function pollStatus() {
+            const r = await fetch("/api/status");
+            const s = await r.json();
+
+            document.getElementById("progressFill").style.width = s.progress + "%";
+            document.getElementById("progressPct").textContent = s.progress + "%";
+
+            const dotClass = s.running ? "running" : (s.status === "错误" ? "error" : (s.status === "完成" ? "done" : "idle"));
+            document.getElementById("statusText").innerHTML = `<span class="status-dot ${dotClass}"></span>${s.status}`;
+
+            if (s.logs && s.logs.length > lastLogCount) {
+                const newLogs = s.logs.slice(lastLogCount);
+                const logBox = document.getElementById("logBox");
+                logBox.textContent += (lastLogCount > 0 ? "\n" : "") + newLogs.join("\n");
+                logBox.scrollTop = logBox.scrollHeight;
+                lastLogCount = s.logs.length;
+            }
+
+            if (s.result && !s.running) {
+                stopPolling();
+                document.getElementById("startBtn").disabled = false;
+                document.getElementById("startBtn").style.display = "block";
+                document.getElementById("stopBtn").style.display = "none";
+                const rb = document.getElementById("resultBox");
+                if (s.result.ok) {
+                    rb.className = "result-box success";
+                    rb.textContent = `完成！成功转换: ${s.result.processed} 首 | 跳过: ${s.result.skipped} 首 | 失败: ${s.result.failed} 首 | 耗时: ${s.result.time}`;
+                    showToast(`成功转换 ${s.result.processed} 首歌曲！`, "success");
+                    if (s.result.has_download) {
+                        document.getElementById("downloadBtn").style.display = "block";
+                    }
+                } else {
+                    rb.className = "result-box error";
+                    rb.textContent = "任务失败或已停止";
+                    showToast("任务异常", "error");
+                }
+            }
+        }
+
+        function showToast(msg, type) {
+            const t = document.getElementById("toast");
+            t.textContent = msg;
+            t.className = "toast " + type + " show";
+            setTimeout(() => { t.className = "toast"; }, 3000);
+        }
+
+        function showTutorial() {
+            document.getElementById("tutorialModal").classList.add("show");
+        }
+
+        function closeTutorial() {
+            document.getElementById("tutorialModal").classList.remove("show");
+        }
+
+        function downloadZip() {
+            window.location.href = "/api/download";
+        }
+    </script>
+</body>
+</html>
