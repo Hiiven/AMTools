@@ -1,4 +1,4 @@
-# 🎵 AMTools - 高质量音乐下载与转换工具
+# 🎵 AMTools - Apple Music转换MP3工具
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.9+-green.svg)](https://www.python.org/)
